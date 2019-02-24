@@ -44,7 +44,7 @@ def playUrl(video_url,img,plot,title):
     playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
     playlist.clear()
     li = ListItem(path=video_url,thumbnailImage=img)
-    li.setInfo( type="video", infoLabels={ "Path" : video_url, "plot": plot,} )
+    li.setInfo( type="video", infoLabels={ "title":title, "Path" : video_url, "plot": plot,} )
     playlist.add(url=video_url, listitem=li)
     xbmc.Player().play(playlist)
 
