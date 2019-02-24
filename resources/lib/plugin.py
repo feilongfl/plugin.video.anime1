@@ -40,7 +40,7 @@ def Get(url, referer=None):
 
     return urllib2.urlopen(req).read()
 
-def playUrl(video_url,img='',plot='No info',title='video'):
+def playUrl(video_url,img,plot,title):
     playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
     playlist.clear()
     li = ListItem(path=video_url,thumbnailImage=img)
@@ -125,7 +125,7 @@ def play_Video():
     progress.update(100, "", "", "")
     progress.close()
 
-    playUrl(video_url,img=img,plot=plot,title=title)
+    playUrl(video_url,img,plot,title)
 
 def run():
     plugin.run()
