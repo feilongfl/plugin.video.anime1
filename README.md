@@ -1,7 +1,4 @@
-# plugin.video.1993s
+# plugin.video.zzzfun
 
-only support search now.
 
-## TODO
 
-* add top video in home page
