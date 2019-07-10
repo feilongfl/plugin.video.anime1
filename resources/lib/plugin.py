@@ -51,81 +51,47 @@ def playUrl(video_url,img,plot,title):
 
 @plugin.route('/')
 def index():
-    addDirectoryItem(plugin.handle, plugin.url_for(
-        show_search_input), ListItem("Search"), True)
-    p = Get('http://www.zzzfun.com/map-index.html')
-    it = re.finditer(r'<a href="(.*?)" style="\s*color: #fffee4;\s*">(.*?)<\/a><em>\/<\/em><\/h5>\s*<div class="tipInfo">\s*<div class="play-img"><img src="(.*?)" alt="(?:.*?)" \/><\/div>',p)
+    # addDirectoryItem(plugin.handle, plugin.url_for(
+    #     show_search_input), ListItem("Search"), True)
+    p = Get('https://anime1.me/')
+    it = re.finditer(r"""<tr class="row-\d+ (?:even|odd)"><td class="column-1"><a href="/\?cat=(\d+)">(.*?)</a></td><td class="column-2">(.*?)</td><td class="column-3">(.*?)</td><td class="column-4">(.*?)</td><td class="column-5">(.*?)</td></tr>""",p)
     for match in it:
-        id = re.search(r'(\d+)',match.group(1)).group()
-        addDirectoryItem(plugin.handle, plugin.url_for(show_detail, id=id, img=match.group(3)), ListItem(match.group(2),thumbnailImage=match.group(3)), True)
-
-    endOfDirectory(plugin.handle)
-
-@plugin.route('/search_input')
-def show_search_input():
-    s = dialog.input('Search')
-    p = Get('http://www.zzzfun.com/vod-search.html?wd=%s' % s)
-    it = re.finditer(r'<a class="play-img" href="(.*?)"><img src="(.*?)" alt="(.*?)"', p)
-
-    for match in it:
-        id = re.search(r'\d+',match.group(1)).group()
-        print match.group(3)
-        # print id
         addDirectoryItem(plugin.handle, plugin.url_for(
-            show_detail, id=id, img=match.group(2)), ListItem(match.group(3),thumbnailImage=match.group(2)), True)
+            show_detail, id=match.group(1)), ListItem(match.group(2)), True)
 
     endOfDirectory(plugin.handle)
+
+def ParseDetail(url):
+    p = Get(url)
+    it = re.finditer(r"""<h2 class="entry-title"><a href="(.*?)" rel="bookmark">(.*?)</a>.*?<iframe src="(.*?)".*?></iframe>""",p)
+
+    for match in it:
+        vid = match.group(3)
+        title = match.group(2)
+        li = ListItem(title)
+        li.setInfo('video', {})
+        # addDirectoryItem(plugin.handle, plugin.url_for(play_Video, video=vid, title=title), li, False)
+        url = '%s.m3u8|referer=%s|origin=%s' %(vid, vid, vid)
+        print(url)
+        addDirectoryItem(plugin.handle, url, li, False)
+
+    mnav = re.search(r"""<div class="nav-previous"><a href="(.*?/page/\d+)" >上一頁</a>""", p)
+    if mnav:
+        return mnav.group(1)
+    else:
+        return None
 
 @plugin.route('/Detail')
 def show_detail():
-    img = plugin.args['img'][0]
     id = plugin.args['id'][0]
-    p = Get('http://www.zzzfun.com/vod-detail-id-%s.html' % id)
-    it = re.finditer(r'<a class="" href="(.*?)" target="_blank"><span class="title">(.*?)<\/span><\/a>',p)
-
-    plot = ''
-    plotObj = re.search(r'<meta name="description" content="([\s\S]*?)"\s*\/>',p)
-    if plotObj:
-        plot = plotObj.group(1)
-
-    for match in it:
-        vid = match.group(1)
-        title = match.group(2)
-        li = ListItem(title,thumbnailImage=img)
-        li.setInfo('video',{
-            'plot': plot
-        })
-        addDirectoryItem(plugin.handle, plugin.url_for(play_Video, video=vid, img=img, plot=plot, title=title), li, False)
+    url = 'https://anime1.me/?cat=%s' % id
+    while True:
+        print('load %s' % url)
+        url = ParseDetail(url)
+        if not url:
+            break
 
     endOfDirectory(plugin.handle)
-
-@plugin.route('/video')
-def play_Video():
-    progress = DialogProgress()
-    progress.create('Loading')
-    progress.update(10, "", 'Loading Video Info', "")
-    img = plugin.args['img'][0]
-    video_url = plugin.args['video'][0]
-    plot = plugin.args['plot'][0]
-    title = plugin.args['title'][0]
-    progress.update(30, "", 'Loading Web Files', "")
-    p = Get('http://www.zzzfun.com' + video_url)
-    match = re.search(r'"link_pre":"(?:.*?)","url":"(.*?)"',p)
-
-    print("-1",match.group(1))
-    video_url = base64.b64decode(match.group(1))
-    video_url = urllib.unquote(video_url)
-    progress.update(60, "", "Analyse Video Url", "")
-
-    print("0",video_url)
-    p = Get("http://www.zzzfun.com/static/danmu/san.php?" + video_url)
-    video_url = re.search(r'<source src="(.*?)"', p).group(1)
-    print("1",video_url)
-
-    progress.update(100, "", "", "")
-    progress.close()
-
-    playUrl(video_url,img,plot,title)
 
 def run():
     plugin.run()
