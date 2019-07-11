@@ -61,6 +61,15 @@ def index():
 
     endOfDirectory(plugin.handle)
 
+def ParseUrl(vid):
+    m = re.match(r"""https://player\.anime1\.me/watch\?v=(.*)""", vid)
+    if m:
+        p = Get(vid)
+        mvid = re.search(r"""file:"(.*?)",""", p)
+        return '%s|referer=%s' %(mvid.group(1), vid)
+    else:
+        return '%s.m3u8|referer=%s|origin=%s' %(vid, vid, vid)
+
 def ParseDetail(url):
     p = Get(url)
     it = re.finditer(r"""<h2 class="entry-title"><a href="(.*?)" rel="bookmark">(.*?)</a>.*?<iframe src="(.*?)".*?></iframe>""",p)
@@ -71,7 +80,7 @@ def ParseDetail(url):
         li = ListItem(title)
         li.setInfo('video', {})
         # addDirectoryItem(plugin.handle, plugin.url_for(play_Video, video=vid, title=title), li, False)
-        url = '%s.m3u8|referer=%s|origin=%s' %(vid, vid, vid)
+        url = ParseUrl(vid)
         print(url)
         addDirectoryItem(plugin.handle, url, li, False)
 
